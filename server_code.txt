@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#define PORT 8080
+void bill(int t)
+{
+    if(t<900)
+    {
+        printf("client logged out\n");
+        printf("Pay Rs.10\n");
+    }
+    else
+    {
+       t=t/60;
+       t=t*1.5;
+       printf("client logged out\n");
+       printf("Pay Rs.%d\n",t);
+    }
+}
+int main(int argc, char const *argv[])
+{
+    int server_fd, new_socket, valread, result, return_status, n;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char *username="GAURAV", *password="TIWARI";
+    char buffer1[1024] = {0}, buffer2[1024] = {0}, received_int[1024]={0};
+    char *hello1 = "YOU ARE CONNECTED";
+    char *hello2 = "WRONG DETAILS ENTERED";  
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }        
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,                                                  &opt, sizeof(opt)))
+    {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+    address.sin_family = AF_INET; 
+   address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
+      if (bind(server_fd, (struct sockaddr *)&address,                                 size(address))<0)
+    {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd, 3) < 0)
+    {
+        perror("listen"); 
+       exit(EXIT_FAILURE);
+    }
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address,                       (socklen_t*)&addrlen))<0)
+    {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+    valread = read( new_socket , buffer1, 1024);
+    if(valread<0)
+    {
+        printf("Reciving failed\n");
+    }
+    printf("%s\n",buffer1);
+    valread = read( new_socket , buffer2, 1024);
+    if(valread<0)
+    {
+        printf("Reciving failed\n");
+    }
+    printf("%s\n",buffer2);
+    if(strcmp(buffer1, username)==0)
+    {
+        if(strcmp(buffer2,password)==0)
+        {
+            result=send(new_socket , hello1 , strlen(hello1) , 0 ); 
+           printf("Client is Connected\n");
+            if(result>0)
+            {
+                return_status = read(new_socket, &received_int, sizeof(received_int));                if (return_status > 0) 
+                {
+                    n=ntohl(received_int);
+                    bill(n); 
+                }
+            }
+        }
+        else
+        {
+            send(new_socket , hello2 , strlen(hello2) , 0 ); 
+           printf("Client is not connected\n");
+        }
+    }
+    else
+    {
+            send(new_socket , hello2 , strlen(hello2) , 0 );
+            printf("Client is not connected\n");
+    }
+    close(new_socket);
+    return 0;
+}
+
